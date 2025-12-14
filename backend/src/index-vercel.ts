@@ -8,16 +8,16 @@ import { addMinutes, parseISO } from "date-fns";
 const app = express();
 
 // CORS configuration for Vercel
-app.use(cors({
-  origin: true, // Allow all origins (or specify your frontend URLs)
+const corsOptions = {
+  origin: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "X-API-Key"],
   credentials: true,
-}));
+  preflightContinue: false,
+  optionsSuccessStatus: 204,
+};
 
-// Handle preflight requests
-app.options("*", cors());
-
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Initialize database on first request

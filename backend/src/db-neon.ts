@@ -1,7 +1,4 @@
-import { neon, neonConfig } from "@neondatabase/serverless";
-
-// Enable fetch connection pooling for serverless
-neonConfig.fetchConnectionCache = true;
+import { neon } from "@neondatabase/serverless";
 
 const DATABASE_URL = process.env.DATABASE_URL;
 
