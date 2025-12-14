@@ -3,11 +3,21 @@ import express from "express";
 import cors from "cors";
 import { z } from "zod";
 import { sql, initDB } from "./db-neon";
-import { addMinutes, parseISO, isWithinInterval } from "date-fns";
+import { addMinutes, parseISO } from "date-fns";
 
 const app = express();
 
-app.use(cors());
+// CORS configuration for Vercel
+app.use(cors({
+  origin: true, // Allow all origins (or specify your frontend URLs)
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-API-Key"],
+  credentials: true,
+}));
+
+// Handle preflight requests
+app.options("*", cors());
+
 app.use(express.json());
 
 // Initialize database on first request
