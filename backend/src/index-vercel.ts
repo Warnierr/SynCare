@@ -323,6 +323,67 @@ app.get("/audit", async (_req, res) => {
   res.json(rows);
 });
 
+// ============================================
+// DELETE Endpoints
+// ============================================
+
+// Delete patient
+app.delete("/patients/:id", async (req, res) => {
+  const id = Number(req.params.id);
+  try {
+    await sql`DELETE FROM patients WHERE id = ${id}`;
+    await notify(`Patient #${id} supprimé`, "delete");
+    res.json({ ok: true, message: "Patient supprimé" });
+  } catch (e) {
+    res.status(500).json({ error: "Erreur lors de la suppression" });
+  }
+});
+
+// Delete practitioner
+app.delete("/practitioners/:id", async (req, res) => {
+  const id = Number(req.params.id);
+  try {
+    // Check if practitioner has appointments
+    const appointments = await sql`SELECT COUNT(*) as count FROM appointments WHERE "practitionerId" = ${id}`;
+    if (Number(appointments[0].count) > 0) {
+      return res.status(400).json({ error: "Impossible de supprimer un praticien avec des RDV" });
+    }
+    await sql`DELETE FROM practitioners WHERE id = ${id}`;
+    await notify(`Praticien #${id} supprimé`, "delete");
+    res.json({ ok: true, message: "Praticien supprimé" });
+  } catch (e) {
+    res.status(500).json({ error: "Erreur lors de la suppression" });
+  }
+});
+
+// Delete/Cancel appointment
+app.delete("/appointments/:id", async (req, res) => {
+  const id = Number(req.params.id);
+  try {
+    const apt = await sql`SELECT * FROM appointments WHERE id = ${id}`;
+    if (apt.length === 0) {
+      return res.status(404).json({ error: "RDV non trouvé" });
+    }
+    await sql`DELETE FROM appointments WHERE id = ${id}`;
+    await notify(`RDV #${id} annulé`, "cancel");
+    res.json({ ok: true, message: "RDV annulé" });
+  } catch (e) {
+    res.status(500).json({ error: "Erreur lors de l'annulation" });
+  }
+});
+
+// Update appointment status (for cancellation without deletion)
+app.patch("/appointments/:id/cancel", async (req, res) => {
+  const id = Number(req.params.id);
+  try {
+    await sql`UPDATE appointments SET status = 'cancelled' WHERE id = ${id}`;
+    await notify(`RDV #${id} annulé`, "cancel");
+    res.json({ ok: true, message: "RDV annulé" });
+  } catch (e) {
+    res.status(500).json({ error: "Erreur lors de l'annulation" });
+  }
+});
+
 // For local development
 const PORT = process.env.PORT || 4000;
 if (process.env.NODE_ENV !== "production") {

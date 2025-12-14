@@ -272,6 +272,44 @@ function App() {
   };
 
   // ============================================
+  // Delete Actions
+  // ============================================
+  const deletePatient = async (id: number, name: string) => {
+    if (!window.confirm(`Supprimer le patient ${name} ?`)) return;
+    try {
+      await api.deletePatient(id);
+      setPatients((p) => p.filter((x) => x.id !== id));
+      addToast("success", "Patient supprimé", name);
+    } catch (e) {
+      addToast("error", "Erreur", (e as Error).message);
+    }
+  };
+
+  const deletePractitioner = async (id: number, name: string) => {
+    if (!window.confirm(`Supprimer le praticien ${name} ?`)) return;
+    try {
+      await api.deletePractitioner(id);
+      setPractitioners((p) => p.filter((x) => x.id !== id));
+      addToast("success", "Praticien supprimé", name);
+    } catch (e) {
+      addToast("error", "Erreur", (e as Error).message);
+    }
+  };
+
+  const cancelAppointment = async (id: number) => {
+    if (!window.confirm("Annuler ce rendez-vous ?")) return;
+    try {
+      await api.deleteAppointment(id);
+      setAppointments((a) => a.filter((x) => x.id !== id));
+      addToast("success", "RDV annulé");
+      const notifs = await api.listNotifications();
+      setNotifications(notifs);
+    } catch (e) {
+      addToast("error", "Erreur", (e as Error).message);
+    }
+  };
+
+  // ============================================
   // Stats
   // ============================================
   const todayStr = new Date().toDateString();
@@ -580,7 +618,7 @@ function App() {
                           />
                         </div>
                       </div>
-                      {matchResults.length > 0 && (
+                      {matchResults.length > 0 ? (
                         <div className="match-grid" style={{ marginTop: 16 }}>
                           {matchResults.slice(0, 6).map((slot, idx) => (
                             <div
@@ -614,7 +652,15 @@ function App() {
                             </div>
                           ))}
                         </div>
-                      )}
+                      ) : matchForm.patientId && matchForm.practitionerId ? (
+                        <div className="match-empty" style={{ marginTop: 16 }}>
+                          <div className="match-empty-icon">📅</div>
+                          <div className="match-empty-text">Aucun créneau disponible</div>
+                          <div className="match-empty-hint">
+                            Ajoutez des disponibilités dans l'onglet Praticiens
+                          </div>
+                        </div>
+                      ) : null}
                     </div>
                   </div>
 
@@ -644,13 +690,22 @@ function App() {
                                   avec {pract?.fullName || "Praticien"} · {a.pathology || "Consultation"}
                                 </div>
                               </div>
-                              <div style={{ textAlign: "right" }}>
-                                <div style={{ fontWeight: 500, color: "var(--accent-primary)" }}>
-                                  {formatDate(a.start)}
+                              <div style={{ textAlign: "right", display: "flex", alignItems: "center", gap: 12 }}>
+      <div>
+                                  <div style={{ fontWeight: 500, color: "var(--accent-primary)" }}>
+                                    {formatDate(a.start)}
+                                  </div>
+                                  <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
+                                    {formatTime(a.start)} - {formatTime(a.end)}
+                                  </div>
                                 </div>
-                                <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
-                                  {formatTime(a.start)} - {formatTime(a.end)}
-                                </div>
+                                <button
+                                  className="btn btn-danger btn-sm"
+                                  onClick={() => cancelAppointment(a.id)}
+                                  title="Annuler RDV"
+                                >
+                                  ✕
+                                </button>
                               </div>
                             </div>
                           );
@@ -738,6 +793,7 @@ function App() {
                           <th>Prénom</th>
                           <th>Pathologie</th>
                           <th>Notes</th>
+                          <th style={{ width: 80 }}>Actions</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -753,11 +809,20 @@ function App() {
                               )}
                             </td>
                             <td style={{ color: "var(--text-muted)" }}>{p.notes || "—"}</td>
+                            <td>
+                              <button
+                                className="btn btn-danger btn-sm"
+                                onClick={() => deletePatient(p.id, `${p.lastName} ${p.firstName}`)}
+                                title="Supprimer"
+                              >
+                                🗑️
+                              </button>
+                            </td>
                           </tr>
                         ))}
                         {patients.length === 0 && (
                           <tr>
-                            <td colSpan={4}>
+                            <td colSpan={5}>
                               <div className="empty-state">
                                 <div className="empty-state-icon">👥</div>
                                 <div className="empty-state-title">Aucun patient</div>
@@ -876,6 +941,7 @@ function App() {
                         <tr>
                           <th>Nom</th>
                           <th>Spécialité</th>
+                          <th style={{ width: 80 }}>Actions</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -889,11 +955,20 @@ function App() {
                                 "—"
                               )}
                             </td>
+                            <td>
+                              <button
+                                className="btn btn-danger btn-sm"
+                                onClick={() => deletePractitioner(p.id, p.fullName)}
+                                title="Supprimer"
+                              >
+                                🗑️
+                              </button>
+                            </td>
                           </tr>
                         ))}
                         {practitioners.length === 0 && (
                           <tr>
-                            <td colSpan={2}>
+                            <td colSpan={3}>
                               <div className="empty-state">
                                 <div className="empty-state-icon">🩺</div>
                                 <div className="empty-state-title">Aucun praticien</div>
@@ -1070,10 +1145,22 @@ function App() {
                                           className={`calendar-event ${getPractitionerColor(appt.practitionerId)}`}
                                           style={getEventStyle(appt)}
                                         >
-                                          <div className="calendar-event-title">
-                                            {patient
-                                              ? `${patient.lastName} ${patient.firstName}`
-                                              : `Patient #${appt.patientId}`}
+                                          <div className="calendar-event-header">
+                                            <div className="calendar-event-title">
+                                              {patient
+                                                ? `${patient.lastName} ${patient.firstName}`
+                                                : `Patient #${appt.patientId}`}
+                                            </div>
+                                            <button
+                                              className="calendar-event-cancel"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                cancelAppointment(appt.id);
+                                              }}
+                                              title="Annuler"
+                                            >
+                                              ✕
+                                            </button>
                                           </div>
                                           <div className="calendar-event-time">
                                             {formatTime(appt.start)} - {formatTime(appt.end)}
