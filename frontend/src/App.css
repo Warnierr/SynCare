@@ -931,6 +931,126 @@
   font-size: 11px;
 }
 
+/* Preset buttons for quick availability */
+.preset-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.btn-preset {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-preset:hover {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+  color: white;
+  transform: translateY(-1px);
+}
+
+.btn-preset.active {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+  color: white;
+}
+
+/* Smart suggestions panel */
+.smart-suggestions {
+  background: linear-gradient(135deg, var(--bg-subtle), var(--bg-surface));
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  margin-top: 16px;
+}
+
+.smart-suggestions-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.smart-suggestions-icon {
+  font-size: 18px;
+}
+
+.smart-suggestions-title {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.smart-suggestions-subtitle {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-left: auto;
+}
+
+.suggestion-slots {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
+}
+
+.suggestion-slot {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.suggestion-slot:hover {
+  border-color: var(--accent-primary);
+  background: rgba(16, 185, 129, 0.1);
+  transform: translateY(-2px);
+}
+
+.suggestion-slot-date {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--accent-primary);
+}
+
+.suggestion-slot-time {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.suggestion-slot-duration {
+  font-size: 10px;
+  color: var(--text-muted);
+  opacity: 0.7;
+}
+
+/* Duration presets */
+.duration-presets {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.duration-presets .btn-preset {
+  flex: 1;
+  padding: 6px 8px;
+  font-size: 11px;
+  justify-content: center;
+}
+
 /* Calendar event cancel button */
 .calendar-event-header {
   display: flex;

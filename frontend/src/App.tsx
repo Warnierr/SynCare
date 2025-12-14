@@ -564,7 +564,7 @@ function App() {
                           Matching rapide
                         </h3>
                         <button className="btn btn-secondary" onClick={submitMatch}>
-                          Calculer
+                          Rechercher
                         </button>
                       </div>
                       <div className="form-row">
@@ -603,64 +603,92 @@ function App() {
                           </select>
                         </div>
                         <div className="form-group">
-                          <label className="form-label">Durée (min)</label>
-                          <input
-                            type="number"
-                            className="form-input"
-                            min={5}
-                            value={matchForm.durationMinutes}
-                            onChange={(e) =>
-                              setMatchForm({
-                                ...matchForm,
-                                durationMinutes: Number(e.target.value),
-                              })
-                            }
-                          />
+                          <label className="form-label">Durée</label>
+                          <div className="duration-presets">
+                            {[15, 30, 45, 60].map((mins) => (
+                              <button
+                                key={mins}
+                                type="button"
+                                className={`btn btn-preset ${matchForm.durationMinutes === mins ? "active" : ""}`}
+                                onClick={() => setMatchForm({ ...matchForm, durationMinutes: mins })}
+                              >
+                                {mins} min
+                              </button>
+                            ))}
+                          </div>
                         </div>
                       </div>
+
+                      {/* Smart suggestions */}
                       {matchResults.length > 0 ? (
-                        <div className="match-grid" style={{ marginTop: 16 }}>
-                          {matchResults.slice(0, 6).map((slot, idx) => (
-                            <div
-                              key={idx}
-                              className="match-slot"
-                              onClick={() => {
-                                // Pré-remplir le formulaire RDV (format datetime-local)
-                                const formatForInput = (iso: string) => {
-                                  const d = new Date(iso);
-                                  return d.toISOString().slice(0, 16);
-                                };
-                                setAppointmentForm({
-                                  patientId: matchForm.patientId,
-                                  practitionerId: matchForm.practitionerId,
-                                  start: formatForInput(slot.start),
-                                  end: formatForInput(slot.end),
-                                  pathology: "",
-                                  notes: "",
-                                });
-                                // Aller à l'Agenda
-                                setView("agenda");
-                                addToast("info", "Créneau sélectionné", "Confirmez le RDV dans l'agenda");
-                              }}
-                            >
-                              <div className="match-slot-time">
-                                {formatDateTime(slot.start)}
-                              </div>
-                              <div className="match-slot-info">
-                                → {formatTime(slot.end)} · Cliquer pour réserver
-                              </div>
-                            </div>
-                          ))}
+                        <div className="smart-suggestions">
+                          <div className="smart-suggestions-header">
+                            <span className="smart-suggestions-icon">✨</span>
+                            <span className="smart-suggestions-title">Créneaux disponibles</span>
+                            <span className="smart-suggestions-subtitle">{matchResults.length} options</span>
+                          </div>
+                          <div className="suggestion-slots">
+                            {matchResults.slice(0, 8).map((slot, idx) => {
+                              const startDate = new Date(slot.start);
+                              const dayName = startDate.toLocaleDateString("fr-FR", { weekday: "short" });
+                              const dayNum = startDate.getDate();
+                              const month = startDate.toLocaleDateString("fr-FR", { month: "short" });
+                              return (
+                                <div
+                                  key={idx}
+                                  className="suggestion-slot"
+                                  onClick={() => {
+                                    const formatForInput = (iso: string) => new Date(iso).toISOString().slice(0, 16);
+                                    setAppointmentForm({
+                                      patientId: matchForm.patientId,
+                                      practitionerId: matchForm.practitionerId,
+                                      start: formatForInput(slot.start),
+                                      end: formatForInput(slot.end),
+                                      pathology: "",
+                                      notes: "",
+                                    });
+                                    setView("agenda");
+                                    addToast("info", "Créneau sélectionné", "Confirmez le RDV dans l'agenda");
+                                  }}
+                                >
+                                  <div className="suggestion-slot-date">
+                                    {dayName} {dayNum} {month}
+                                  </div>
+                                  <div className="suggestion-slot-time">
+                                    {formatTime(slot.start)} → {formatTime(slot.end)}
+                                  </div>
+                                  <div className="suggestion-slot-duration">
+                                    {matchForm.durationMinutes} min
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
                         </div>
                       ) : matchForm.patientId && matchForm.practitionerId ? (
                         <div className="match-empty" style={{ marginTop: 16 }}>
                           <div className="match-empty-icon">📅</div>
                           <div className="match-empty-text">Aucun créneau disponible</div>
                           <div className="match-empty-hint">
-                            Ajoutez des disponibilités dans l'onglet Praticiens
+                            💡 Ajoutez des disponibilités dans l'onglet Praticiens
+                          </div>
+                          <button
+                            className="btn btn-secondary"
+                            style={{ marginTop: 12 }}
+                            onClick={() => setView("practitioners")}
+                          >
+                            Gérer les disponibilités
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="match-empty" style={{ marginTop: 16 }}>
+                          <div className="match-empty-icon">👆</div>
+                          <div className="match-empty-text">Sélectionnez un patient et un praticien</div>
+                          <div className="match-empty-hint">
+                            Les créneaux disponibles s'afficheront automatiquement
                           </div>
                         </div>
-                      ) : null}
+                      )}
                     </div>
                   </div>
 
@@ -898,6 +926,70 @@ function App() {
                         ))}
                       </select>
                     </div>
+
+                    {/* Quick presets */}
+                    <div className="quick-presets" style={{ marginTop: 12 }}>
+                      <label className="form-label">Créneaux rapides</label>
+                      <div className="preset-buttons">
+                        <button
+                          type="button"
+                          className="btn btn-preset"
+                          onClick={() => {
+                            const tomorrow = new Date();
+                            tomorrow.setDate(tomorrow.getDate() + 1);
+                            tomorrow.setHours(9, 0, 0, 0);
+                            const end = new Date(tomorrow);
+                            end.setHours(12, 0, 0, 0);
+                            setAvailabilityForm({
+                              ...availabilityForm,
+                              start: tomorrow.toISOString().slice(0, 16),
+                              end: end.toISOString().slice(0, 16),
+                            });
+                          }}
+                        >
+                          Demain matin
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-preset"
+                          onClick={() => {
+                            const tomorrow = new Date();
+                            tomorrow.setDate(tomorrow.getDate() + 1);
+                            tomorrow.setHours(14, 0, 0, 0);
+                            const end = new Date(tomorrow);
+                            end.setHours(18, 0, 0, 0);
+                            setAvailabilityForm({
+                              ...availabilityForm,
+                              start: tomorrow.toISOString().slice(0, 16),
+                              end: end.toISOString().slice(0, 16),
+                            });
+                          }}
+                        >
+                          Demain après-midi
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-preset"
+                          onClick={() => {
+                            const today = new Date();
+                            const monday = new Date(today);
+                            monday.setDate(today.getDate() + (8 - today.getDay()) % 7);
+                            monday.setHours(9, 0, 0, 0);
+                            const friday = new Date(monday);
+                            friday.setDate(monday.getDate() + 4);
+                            friday.setHours(18, 0, 0, 0);
+                            setAvailabilityForm({
+                              ...availabilityForm,
+                              start: monday.toISOString().slice(0, 16),
+                              end: friday.toISOString().slice(0, 16),
+                            });
+                          }}
+                        >
+                          Semaine prochaine
+                        </button>
+                      </div>
+                    </div>
+
                     <div className="form-row" style={{ marginTop: 12 }}>
                       <div className="form-group">
                         <label className="form-label">Début</label>
